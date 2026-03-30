@@ -1,0 +1,36 @@
+.ant-menu-light .ant-menu-item:hover,
+.ant-menu-light .ant-menu-item-active,
+.ant-menu-light .ant-menu:not(.ant-menu-inline) .ant-menu-submenu-open,
+.ant-menu-light .ant-menu-submenu-active,
+.ant-menu-light .ant-menu-submenu-title:hover {
+  color: rgb(254 91 24) !important;
+}
+
+.ant-menu-submenu:hover
+  > .ant-menu-submenu-title
+  > .ant-menu-submenu-expand-icon,
+.ant-menu-submenu:hover > .ant-menu-submenu-title > .ant-menu-submenu-arrow {
+  color: rgb(254 91 24) !important;
+}
+
+.ant-menu-light .ant-menu-item:hover {
+  color: rgb(254 91 24) !important;
+}
+.ant-menu-item-selected {
+  color: rgb(254 91 24);
+}
+
+.ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected {
+  background-color: rgba(254, 89, 24, 0.2) !important;
+}
+
+.ant-menu-submenu-selected {
+  color: rgb(254 91 24);
+}
+
+.ant-menu-vertical .ant-menu-item::after,
+.ant-menu-vertical-left .ant-menu-item::after,
+.ant-menu-vertical-right .ant-menu-item::after,
+.ant-menu-inline .ant-menu-item::after {
+  border-right: 3px solid rgb(254 91 24) !important;
+}

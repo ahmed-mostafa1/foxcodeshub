@@ -1,0 +1,32 @@
+.main-content {
+  padding: 1.5rem 8rem;
+}
+
+.dash-content {
+  padding: 1.5rem 0 0 1.5rem;
+}
+
+@media (max-width: 1300px) {
+  .main-content {
+    padding: 1.5rem 4rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1.5rem 1rem;
+  }
+  .dash-content {
+    padding: 1.5rem 0 0 0.5rem;
+  }
+}
+
+.footer-link {
+  font-size: 1.5em !important;
+  color: #fd6425 !important;
+  margin: 0 1rem !important;
+}
+
+.footer-link:hover {
+  color: #fd9c74 !important;
+}

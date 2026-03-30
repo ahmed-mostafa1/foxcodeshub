@@ -1,0 +1,48 @@
+.ant-upload.ant-upload-drag p.ant-upload-drag-icon .anticon {
+  color: rgb(254 91 24);
+}
+
+.ant-upload.ant-upload-drag:not(.ant-upload-disabled):hover {
+  border-color: rgb(254 91 24);
+}
+
+.ant-steps-item-process > .ant-steps-item-container > .ant-steps-item-icon {
+  background-color: rgb(254 91 24);
+}
+
+.ant-steps-item-process .ant-steps-item-icon {
+  border-color: rgb(254 91 24);
+}
+
+.ant-steps-item-finish
+  > .ant-steps-item-container
+  > .ant-steps-item-content
+  > .ant-steps-item-title:after {
+  background-color: rgb(254 91 24);
+}
+
+.ant-steps-item-finish .ant-steps-item-icon {
+  border-color: rgb(254 91 24);
+}
+
+.ant-steps-item-finish .ant-steps-item-icon > .ant-steps-icon {
+  color: rgb(254 91 24);
+}
+
+.ant-btn-dashed:focus,
+.ant-btn-dashed:hover {
+  border: none;
+  color: rgb(254 91 24);
+}
+
+.ant-upload.ant-upload-select-picture-card:hover {
+  border-color: rgb(254 91 24);
+}
+
+.dragger {
+  margin: 1rem 0;
+}
+
+.dragger .ant-upload.ant-upload-drag {
+  padding: 0.5rem;
+}

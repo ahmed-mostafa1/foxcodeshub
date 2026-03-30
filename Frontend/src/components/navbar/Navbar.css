@@ -1,0 +1,71 @@
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item:hover,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu:hover,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-active,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-active,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-open,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-open,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-selected,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-selected {
+  color: rgb(254 91 24);
+}
+
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item:hover::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu:hover::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-active::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-active::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-open::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-open::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-selected::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-selected::after {
+  border-bottom: 2px solid rgb(254 91 24);
+}
+
+.ant-menu-vertical-left .ant-menu-submenu-selected,
+.ant-menu-vertical-right .ant-menu-submenu-selected,
+.ant-menu-vertical .ant-menu-submenu-selected {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.ant-menu-horizontal > .ant-menu-item a:hover {
+  color: rgb(254 91 24);
+}
+
+.ant-menu-item a:hover {
+  color: rgb(254 91 24);
+}
+
+.ant-menu-horizontal > .ant-menu-item-selected a {
+  color: rgb(254 91 24);
+}
+.ant-menu-item-selected a {
+  color: rgb(254 91 24);
+}
+
+.nav-btn :hover {
+  text-decoration: none !important;
+  border: none !important;
+}
+
+.nav-btn::after {
+  border: none !important;
+}
+
+.ant-row-rtl #components-layout-demo-top .logo {
+  float: right;
+  margin: 16px 0 16px 24px;
+}
+
+.nav-btn .ant-btn-primary {
+  color: #fff;
+  border-color: rgb(254 91 24);
+  background: rgb(254 91 24);
+  text-shadow: 0 -1px 0 rgb(0 0 0 / 12%);
+  box-shadow: 0 2px 0 rgb(0 0 0 / 5%);
+}
+
+.nav-btn .ant-btn-dashed {
+  color: rgb(254 91 24);
+  border-color: rgb(254 91 24);
+  background: #fff;
+  border-style: dashed;
+}

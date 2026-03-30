@@ -1,0 +1,36 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django = "*"
+djangorestframework = "*"
+python-dotenv = "*"
+python-decouple = "*"
+pillow = "*"
+psycopg2 = "*"
+django-cors-headers = "*"
+drf-social-oauth2 = "*"
+paypalrestsdk = "*"
+paypalhttp = "*"
+paypal-payouts-sdk = "*"
+gunicorn = "*"
+whitenoise = "*"
+dj-database-url = "*"
+cloudinary = "*"
+django-cloudinary-storage = "*"
+install = "*"
+django-admin-interface = "*"
+django-extensions = "*"
+django-debug-toolbar = "*"
+
+[dev-packages]
+autopip = "*"
+django-extensions = "*"
+autopep8 = "*"
+django-debug-toolbar = "*"
+awsebcli = "*"
+
+[requires]
+python_version = "3.8"
