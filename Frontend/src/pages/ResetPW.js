@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { axiosInstance } from '../Axios'
 import { Layout, Form, Input, Button, message } from 'antd'
+import { SITE_URL } from '../config'
 const { Content } = Layout
 
 const ResetPW = () => {
@@ -8,7 +9,7 @@ const ResetPW = () => {
     const handleFinish = values => {
         axiosInstance.post('/account/password-reset-request/', {
             "email":values.email,
-            "redirect_url":"https://foxsourcecode.com/password-reset-confirm"
+            "redirect_url":`${SITE_URL}/password-reset-confirm`
         })
         .then(res => {
             message.success('an email sent check your mail inbox you will be redirect to home')

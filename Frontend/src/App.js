@@ -14,6 +14,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import ItemPage from './pages/ItemPage';
 import { axiosFetchInstance, axiosInstance, handleUnauthorized } from './Axios'
 import { FacebookFilled, InstagramFilled, TwitterCircleFilled, MailFilled } from '@ant-design/icons'
+import { API_HOST, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET } from './config';
 
 const { Header, Footer } = Layout;
 export const UserContext = React.createContext()
@@ -23,10 +24,10 @@ export const UserContext = React.createContext()
 const App = props => {
 
     const [authedUser, setAuthedUser] = React.useState()
-    const client_id = "WHRieTI9jGGoct7DpgXXeciVI11tcgX2asJrHZ0Z"
-    const client_secret = "wityohIXRQn2ph1TlUO5MhNovgtH8LpEhkooXBQPMYvyT6S6X78vsKeEORvDbJAHemBs4AVBeLrODTvgR49A0Cdfb9W38NC2T5q6sItdbu1kRsGq2vg3UFpZcdwvsNth"
-    const host = 'https://foxsourcecode.com'
-    React.useMemo(() => {
+    const client_id = OAUTH_CLIENT_ID
+    const client_secret = OAUTH_CLIENT_SECRET
+    const host = API_HOST
+    React.useEffect(() => {
         if (localStorage.getItem('foxCodes_accessToken')){
             axiosFetchInstance
             .get('/account/dashboard/')

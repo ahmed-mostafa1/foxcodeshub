@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { message } from 'antd';
+import { API_BASE_URL, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET } from './config';
 
-const baseUrl = 'https://foxsourcecode.com/api'
+const baseUrl = API_BASE_URL
 
 export const axiosInstance = axios.create({
     baseURL: baseUrl,
@@ -56,8 +57,8 @@ export const handleUnauthorized = error => {
         if (refresh_token){
             const body = JSON.stringify({
                 grant_type: "refresh_token",
-                client_id: "WHRieTI9jGGoct7DpgXXeciVI11tcgX2asJrHZ0Z",
-                client_secret: "wityohIXRQn2ph1TlUO5MhNovgtH8LpEhkooXBQPMYvyT6S6X78vsKeEORvDbJAHemBs4AVBeLrODTvgR49A0Cdfb9W38NC2T5q6sItdbu1kRsGq2vg3UFpZcdwvsNth",
+                client_id: OAUTH_CLIENT_ID,
+                client_secret: OAUTH_CLIENT_SECRET,
                 refresh_token
             })
             axiosInstance
@@ -138,4 +139,3 @@ export const handleUnauthorized = error => {
 
 //     }
 // )
-

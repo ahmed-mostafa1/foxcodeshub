@@ -100,12 +100,13 @@ def resetPasswordRequest(request):
         uid64 = urlsafe_base64_encode(smart_bytes(user.id))
         token = PasswordResetTokenGenerator().make_token(user)
         redirect_url = request.data['redirect_url']
-        current_site = 'localhost:8000'
+        current_site = request.get_host()
+        scheme = 'https' if request.is_secure() else 'http'
         relative_site = reverse(
             'password-reset-check',
             kwargs={'uid64': uid64, 'token': token}
         )
-        absurl = f"http://{current_site}{relative_site}"
+        absurl = f"{scheme}://{current_site}{relative_site}"
         email_body = f"you requested an email to reset your password \n please use the link below \n {absurl}?redirect_url={redirect_url}"
         data = {
             'email_body': email_body,

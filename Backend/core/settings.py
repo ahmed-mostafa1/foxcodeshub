@@ -9,9 +9,12 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-from pathlib import Path
 import os
+from pathlib import Path
+
+import dj_database_url
 from dotenv import load_dotenv, find_dotenv
+
 load_dotenv(find_dotenv())
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -21,20 +24,44 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/hoo/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    normalized = value.strip().lower()
+    if normalized in {'1', 'true', 'yes', 'on'}:
+        return True
+    if normalized in {'0', 'false', 'no', 'off'}:
+        return False
+    return default
 
-DEBUG = False
+
+# SECURITY WARNING: keep the secret key used in production secret!
+DEBUG = env_bool('DEBUG', True)
 
 
 if DEBUG:
-    SECRET_KEY = os.environ['DEVELOP_KEY']
+    SECRET_KEY = os.environ.get('DEVELOP_KEY') or 'django-insecure-local-dev-key'
 else:
-    SECRET_KEY = os.environ['PRODUCTION_KEY']
+    SECRET_KEY = os.environ.get('PRODUCTION_KEY') or os.environ.get('DEVELOP_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-CORS_ALLOW_ALL_ORIGINS = True
-ALLOWED_HOSTS = ['foxsourcecode.com',
-                 'www.foxsourcecode.com', 'localhost', '143.244.169.184']
+CORS_ALLOW_ALL_ORIGINS = env_bool('CORS_ALLOW_ALL_ORIGINS', True)
+ENABLE_SOCIAL_AUTH = env_bool('ENABLE_SOCIAL_AUTH', not DEBUG)
+ALLOWED_HOSTS = [
+    host.strip() for host in os.environ.get(
+        'ALLOWED_HOSTS',
+        'localhost,127.0.0.1,0.0.0.0,foxsourcecode.com,www.foxsourcecode.com,143.244.169.184'
+    ).split(',')
+    if host.strip()
+]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip() for origin in os.environ.get(
+        'CSRF_TRUSTED_ORIGINS',
+        'http://localhost:3000,http://127.0.0.1:3000,https://foxsourcecode.com,https://www.foxsourcecode.com'
+    ).split(',')
+    if origin.strip()
+]
 
 
 # Application definition
@@ -58,13 +85,15 @@ INSTALLED_APPS = [
     # 3rd party
     'corsheaders',
     'oauth2_provider',
-    'social_django',
     'drf_social_oauth2',
     'gunicorn',
     'whitenoise',
     'cloudinary',
     'cloudinary_storage',
 ]
+
+if ENABLE_SOCIAL_AUTH:
+    INSTALLED_APPS.append('social_django')
 
 DEV_APPS = [
     'django_extensions',
@@ -103,12 +132,16 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'social_django.context_processors.backends',
-                'social_django.context_processors.login_redirect',
             ],
         },
     },
 ]
+
+if ENABLE_SOCIAL_AUTH:
+    TEMPLATES[0]['OPTIONS']['context_processors'].extend([
+        'social_django.context_processors.backends',
+        'social_django.context_processors.login_redirect',
+    ])
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
@@ -116,16 +149,29 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'foxcodes',
-        'HOST': 'localhost',
-        'USER': 'foxcodes',
-        'PASSWORD': 'foxcodes',
-        'PORT': '',
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    DATABASES = {
+        'default': dj_database_url.parse(database_url, conn_max_age=600)
     }
-}
+elif DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'foxcodes',
+            'HOST': 'localhost',
+            'USER': 'foxcodes',
+            'PASSWORD': 'foxcodes',
+            'PORT': '',
+        }
+    }
 
 
 # Password validation
@@ -197,22 +243,21 @@ REST_FRAMEWORK = {
 
 }
 
-AUTHENTICATION_BACKENDS = (
-    # Others auth providers (e.g. Google, OpenId, etc)
-
-    # Google OAuth2
-    'social_core.backends.google.GoogleOAuth2',
-
-    # Facebook OAuth2
-    'social_core.backends.facebook.FacebookAppOAuth2',
-    'social_core.backends.facebook.FacebookOAuth2',
-
-    # drf_social_oauth2
+AUTHENTICATION_BACKENDS = [
     'drf_social_oauth2.backends.DjangoOAuth2',
-
-    # Django
     'django.contrib.auth.backends.ModelBackend',
-)
+]
+
+if ENABLE_SOCIAL_AUTH:
+    AUTHENTICATION_BACKENDS = [
+        # Google OAuth2
+        'social_core.backends.google.GoogleOAuth2',
+
+        # Facebook OAuth2
+        'social_core.backends.facebook.FacebookAppOAuth2',
+        'social_core.backends.facebook.FacebookOAuth2',
+        *AUTHENTICATION_BACKENDS,
+    ]
 
 # Facebook configuration
 SOCIAL_AUTH_FACEBOOK_KEY = '1730643360462848'
@@ -239,17 +284,37 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
 SOCIAL_AUTH_USER_FIELDS = ['email', 'username', 'password']
 
 # Email Configrations
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'saiednotifier@gmail.com'
-EMAIL_HOST_PASSWORD = 'gtyrrhxsngxdxavh'
-
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
+)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'saiednotifier@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get(
+    'EMAIL_HOST_PASSWORD',
+    os.environ.get('NOTIFIER_EMAIL_PASS', '')
+)
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS', True)
 
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
-PAYPAL_CLIENT_ID = os.environ["PAYPAL_CLIENT_ID"] if DEBUG else os.environ["PAYPAL_CLIENT_ID_LIVE"]
-PAYPAL_CLIENT_SECRET = os.environ["PAYPAL_CLIENT_SECRET"] if DEBUG else os.environ["PAYPAL_CLIENT_SECRET_LIVE"]
-PAYPAL_WEBHOOK_ID = os.environ["PAYPAL_WEBHOOK_ID"] if DEBUG else os.environ["PAYPAL_WEBHOOK_ID_LIVE"]
+OAUTH_CLIENT_ID = os.environ.get('OAUTH_CLIENT_ID', 'local-dev-client-id')
+OAUTH_CLIENT_SECRET = os.environ.get(
+    'OAUTH_CLIENT_SECRET',
+    'local-dev-client-secret'
+)
+
+PAYPAL_CLIENT_ID = os.environ.get(
+    "PAYPAL_CLIENT_ID" if DEBUG else "PAYPAL_CLIENT_ID_LIVE",
+    os.environ.get("PAYPAL_CLIENT_ID", "")
+)
+PAYPAL_CLIENT_SECRET = os.environ.get(
+    "PAYPAL_CLIENT_SECRET" if DEBUG else "PAYPAL_CLIENT_SECRET_LIVE",
+    os.environ.get("PAYPAL_CLIENT_SECRET", "")
+)
+PAYPAL_WEBHOOK_ID = os.environ.get(
+    "PAYPAL_WEBHOOK_ID" if DEBUG else "PAYPAL_WEBHOOK_ID_LIVE",
+    os.environ.get("PAYPAL_WEBHOOK_ID", "")
+)

@@ -3,10 +3,11 @@ import ReactDOM from 'react-dom';
 import App from './App';
 import './index.css'
 import { PayPalScriptProvider } from '@paypal/react-paypal-js'
+import { PAYPAL_CLIENT_ID } from './config';
 
 ReactDOM.render(
   <PayPalScriptProvider
-  options={{ "client-id": process.env.REACT_APP_PAYPAL_CLIENT_ID }}
+  options={{ "client-id": PAYPAL_CLIENT_ID }}
   >
     <App />
     </PayPalScriptProvider>,
