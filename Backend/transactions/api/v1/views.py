@@ -15,7 +15,7 @@ from django.views.generic import View
 import json
 from account.api.v1.serializers import UserDataSerializer
 from transactions.models import *
-from paypalpayoutssdk.core import PayPalHttpClient, SandboxEnvironment
+from paypalpayoutssdk.core import PayPalHttpClient, SandboxEnvironment, LiveEnvironment
 from account.models import UserProfile
 from items.models import Item
 from .serializers import *
@@ -23,7 +23,8 @@ from account.utils import Util
 from django.utils import timezone
 
 
-environment = SandboxEnvironment(
+environment_class = SandboxEnvironment if settings.PAYPAL_USE_SANDBOX else LiveEnvironment
+environment = environment_class(
     client_id=settings.PAYPAL_CLIENT_ID, client_secret=settings.PAYPAL_CLIENT_SECRET)
 client = PayPalHttpClient(environment)
 
@@ -113,13 +114,13 @@ class process_webhook(View):
             try:
                 Util.send_email({
                     'email_subject': 'Your purchace details on Fox Source Code',
-                    'email_body': f"Hello {payment.buyer.fullname} \n You have just purchaced {payment.item.name} and this is the details \n Item:{payment.item.name}\n Transaction Date:{payment.date}\n Transaction Amount:{payment.total_amount}$ \n We hope you enjoy your purchace \n If you faced any problem please contact us at: \n support@foxsourcecode.com",
+                    'email_body': f"Hello {payment.buyer.fullname} \n You have just purchaced {payment.item.name} and this is the details \n Item:{payment.item.name}\n Transaction Date:{payment.date}\n Transaction Amount:{payment.total_amount}$ \n We hope you enjoy your purchace \n If you faced any problem please contact us at: \n {settings.SUPPORT_EMAIL}",
                     'to_email': [payment.buyer.email]
                 })
 
                 Util.send_email({
                     'email_subject': 'You have new Earning with us',
-                    'email_body': f"Hello {payment.seller.fullname}, Hope you are doing well \n We send this email to inform you that you have new earning and {payment.net_amount}$ has just added to your credit \n Earning details: \n Item:{payment.item.name} \n Transaction Date:{payment.date} \n Transaction Amount:{payment.net_amount}$ \n Buyer:{payment.buyer.username} \n Enjoy your new earning and feel free to contact us ifyou faced any problem \n support@foxsourcecode.com",
+                    'email_body': f"Hello {payment.seller.fullname}, Hope you are doing well \n We send this email to inform you that you have new earning and {payment.net_amount}$ has just added to your credit \n Earning details: \n Item:{payment.item.name} \n Transaction Date:{payment.date} \n Transaction Amount:{payment.net_amount}$ \n Buyer:{payment.buyer.username} \n Enjoy your new earning and feel free to contact us ifyou faced any problem \n {settings.SUPPORT_EMAIL}",
                     'to_email': [payment.seller.email]
                 })
             except:

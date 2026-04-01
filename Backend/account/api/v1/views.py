@@ -16,6 +16,7 @@ from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect
 from account.utils import Util
 from django.core.mail import send_mail
+from django.conf import settings
 
 
 @api_view(['POST'])
@@ -43,7 +44,7 @@ def sign_up(request):
             }
         Util.send_email({
             'email_subject': f"Welcome to Fox Source code",
-            'email_body': f"Hello {user.fullname} \n welcome to our site we hope you get the best experience with us \n enjoy our market place as a buyer or upload your code and become seller with us and start gaining money \n  please fill free to contact us if you faced any problem at: \n support@foxsourcecode.com",
+            'email_body': f"Hello {user.fullname} \n welcome to our site we hope you get the best experience with us \n enjoy our market place as a buyer or upload your code and become seller with us and start gaining money \n  please fill free to contact us if you faced any problem at: \n {settings.SUPPORT_EMAIL}",
             'to_email': user.email
         })
         return Response(data=tokens, status=status.HTTP_201_CREATED)
@@ -117,7 +118,7 @@ def resetPasswordRequest(request):
         send_mail(
             subject='reset password request',
             message=email_body,
-            from_email='saiednotifier@gmail.com',
+            from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
             fail_silently=True
         )
@@ -178,12 +179,12 @@ def handle_support(request, **kwargs):
         Util.send_email({
             "email_subject": f"User {request.user.username} has a problem with item {item.name}",
             "email_body": f"Problem details: \n Item name:{item.name} \n User Email:{request.user.email} \n Problem: \n {request.data['content']}",
-            "to_email": ['support@foxsourcecode.com']
+            "to_email": [settings.SUPPORT_EMAIL]
         })
     else:
         Util.send_email({
             "email_body": f"Problem details: \n User Email:{request.data['email']} \n Problem: \n {request.data['content']}",
             "email_subject": f"User {request.data['username']} has a problem with",
-            "to_email": ['support@foxsourcecode.com']
+            "to_email": [settings.SUPPORT_EMAIL]
         })
     return Response(data={'success': 'your problem has been pushed to our team wait few days for response'}, status=status.HTTP_200_OK)

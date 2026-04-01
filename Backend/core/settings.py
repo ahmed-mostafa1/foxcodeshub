@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 import os
 from pathlib import Path
 
-import dj_database_url
+
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -36,6 +36,11 @@ def env_bool(name, default=False):
     return default
 
 
+def env_list(name, default=''):
+    raw_value = os.environ.get(name, default)
+    return [item.strip() for item in str(raw_value).split(',') if item.strip()]
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
 DEBUG = env_bool('DEBUG', True)
 
@@ -46,22 +51,32 @@ else:
     SECRET_KEY = os.environ.get('PRODUCTION_KEY') or os.environ.get('DEVELOP_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-CORS_ALLOW_ALL_ORIGINS = env_bool('CORS_ALLOW_ALL_ORIGINS', True)
+CORS_ALLOW_ALL_ORIGINS = env_bool('CORS_ALLOW_ALL_ORIGINS', DEBUG)
+CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS')
 ENABLE_SOCIAL_AUTH = env_bool('ENABLE_SOCIAL_AUTH', not DEBUG)
-ALLOWED_HOSTS = [
-    host.strip() for host in os.environ.get(
-        'ALLOWED_HOSTS',
-        'localhost,127.0.0.1,0.0.0.0,foxsourcecode.com,www.foxsourcecode.com,143.244.169.184'
-    ).split(',')
-    if host.strip()
-]
-CSRF_TRUSTED_ORIGINS = [
-    origin.strip() for origin in os.environ.get(
-        'CSRF_TRUSTED_ORIGINS',
-        'http://localhost:3000,http://127.0.0.1:3000,https://foxsourcecode.com,https://www.foxsourcecode.com'
-    ).split(',')
-    if origin.strip()
-]
+ALLOWED_HOSTS = env_list(
+    'ALLOWED_HOSTS',
+    'localhost,127.0.0.1,0.0.0.0,foxsourcecode.com,www.foxsourcecode.com,143.244.169.184'
+)
+CSRF_TRUSTED_ORIGINS = env_list(
+    'CSRF_TRUSTED_ORIGINS',
+    'http://localhost:3000,http://127.0.0.1:3000,https://foxsourcecode.com,https://www.foxsourcecode.com'
+)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = env_bool('USE_X_FORWARDED_HOST', not DEBUG)
+SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', not DEBUG)
+SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', not DEBUG)
+CSRF_COOKIE_SECURE = env_bool('CSRF_COOKIE_SECURE', not DEBUG)
+SECURE_HSTS_SECONDS = int(
+    os.environ.get('SECURE_HSTS_SECONDS', '0' if DEBUG else '31536000')
+)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool(
+    'SECURE_HSTS_INCLUDE_SUBDOMAINS',
+    not DEBUG,
+)
+SECURE_HSTS_PRELOAD = env_bool('SECURE_HSTS_PRELOAD', not DEBUG)
+SECURE_CONTENT_TYPE_NOSNIFF = env_bool('SECURE_CONTENT_TYPE_NOSNIFF', True)
+SECURE_REFERRER_POLICY = os.environ.get('SECURE_REFERRER_POLICY', 'same-origin')
 
 
 # Application definition
@@ -103,6 +118,7 @@ X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -149,29 +165,12 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-database_url = os.environ.get('DATABASE_URL')
-if database_url:
-    DATABASES = {
-        'default': dj_database_url.parse(database_url, conn_max_age=600)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-elif DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'foxcodes',
-            'HOST': 'localhost',
-            'USER': 'foxcodes',
-            'PASSWORD': 'foxcodes',
-            'PORT': '',
-        }
-    }
+}
 
 
 # Password validation
@@ -210,7 +209,11 @@ USE_TZ = True
 
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+WHITENOISE_AUTOREFRESH = DEBUG
+WHITENOISE_USE_FINDERS = DEBUG
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
@@ -219,7 +222,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # media files config
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+MEDIA_ROOT = os.environ.get('MEDIA_ROOT', os.path.join(BASE_DIR, 'media/'))
 
 
 # default user model
@@ -260,8 +263,8 @@ if ENABLE_SOCIAL_AUTH:
     ]
 
 # Facebook configuration
-SOCIAL_AUTH_FACEBOOK_KEY = '1730643360462848'
-SOCIAL_AUTH_FACEBOOK_SECRET = '43b6ce7faf505b063cc9b0913479ce9d'
+SOCIAL_AUTH_FACEBOOK_KEY = os.environ.get('SOCIAL_AUTH_FACEBOOK_KEY', '')
+SOCIAL_AUTH_FACEBOOK_SECRET = os.environ.get('SOCIAL_AUTH_FACEBOOK_SECRET', '')
 
 # Define SOCIAL_AUTH_FACEBOOK_SCOPE to get extra permissions from Facebook.
 # Email is not sent by default, to get it, you must request the email permission.
@@ -271,8 +274,9 @@ SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {
 }
 
 # Google configuration
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '679751054018-2l8lc8ijibfr7ammo77vfu59epohaiu9.apps.googleusercontent.com'
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', '')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ.get('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET', '')
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = env_bool('SOCIAL_AUTH_REDIRECT_IS_HTTPS', not DEBUG)
 
 # Define SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE to get extra permissions from Google.
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
@@ -296,6 +300,11 @@ EMAIL_HOST_PASSWORD = os.environ.get(
 )
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS', True)
+DEFAULT_FROM_EMAIL = os.environ.get(
+    'DEFAULT_FROM_EMAIL',
+    EMAIL_HOST_USER or 'no-reply@example.com'
+)
+SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'support@foxsourcecode.com')
 
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
@@ -305,16 +314,26 @@ OAUTH_CLIENT_SECRET = os.environ.get(
     'OAUTH_CLIENT_SECRET',
     'local-dev-client-secret'
 )
+PAYPAL_USE_SANDBOX = env_bool('PAYPAL_USE_SANDBOX', DEBUG)
 
 PAYPAL_CLIENT_ID = os.environ.get(
-    "PAYPAL_CLIENT_ID" if DEBUG else "PAYPAL_CLIENT_ID_LIVE",
+    "PAYPAL_CLIENT_ID" if PAYPAL_USE_SANDBOX else "PAYPAL_CLIENT_ID_LIVE",
     os.environ.get("PAYPAL_CLIENT_ID", "")
 )
 PAYPAL_CLIENT_SECRET = os.environ.get(
-    "PAYPAL_CLIENT_SECRET" if DEBUG else "PAYPAL_CLIENT_SECRET_LIVE",
+    "PAYPAL_CLIENT_SECRET" if PAYPAL_USE_SANDBOX else "PAYPAL_CLIENT_SECRET_LIVE",
     os.environ.get("PAYPAL_CLIENT_SECRET", "")
 )
 PAYPAL_WEBHOOK_ID = os.environ.get(
-    "PAYPAL_WEBHOOK_ID" if DEBUG else "PAYPAL_WEBHOOK_ID_LIVE",
+    "PAYPAL_WEBHOOK_ID" if PAYPAL_USE_SANDBOX else "PAYPAL_WEBHOOK_ID_LIVE",
     os.environ.get("PAYPAL_WEBHOOK_ID", "")
 )
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
+}
+
+if all(CLOUDINARY_STORAGE.values()):
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
