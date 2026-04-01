@@ -43,25 +43,18 @@ def env_list(name, default=''):
 
 # SECURITY WARNING: keep the secret key used in production secret!
 DEBUG = env_bool('DEBUG', True)
-
-
-if DEBUG:
-    SECRET_KEY = os.environ.get('DEVELOP_KEY') or 'django-insecure-local-dev-key'
-else:
-    SECRET_KEY = os.environ.get('PRODUCTION_KEY') or os.environ.get('DEVELOP_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY') or (
+    'django-insecure-local-dev-key' if DEBUG else None
+)
+if not SECRET_KEY:
+    raise RuntimeError('SECRET_KEY environment variable must be set in production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 CORS_ALLOW_ALL_ORIGINS = env_bool('CORS_ALLOW_ALL_ORIGINS', DEBUG)
 CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS')
 ENABLE_SOCIAL_AUTH = env_bool('ENABLE_SOCIAL_AUTH', not DEBUG)
-ALLOWED_HOSTS = env_list(
-    'ALLOWED_HOSTS',
-    'localhost,127.0.0.1,0.0.0.0,foxsourcecode.com,www.foxsourcecode.com,143.244.169.184'
-)
-CSRF_TRUSTED_ORIGINS = env_list(
-    'CSRF_TRUSTED_ORIGINS',
-    'http://localhost:3000,http://127.0.0.1:3000,https://foxsourcecode.com,https://www.foxsourcecode.com'
-)
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', '127.0.0.1,localhost')
+CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS', '')
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = env_bool('USE_X_FORWARDED_HOST', not DEBUG)
 SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', not DEBUG)
@@ -101,8 +94,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'oauth2_provider',
     'drf_social_oauth2',
-    'gunicorn',
-    'whitenoise',
     'cloudinary',
     'cloudinary_storage',
 ]
@@ -117,10 +108,9 @@ DEV_APPS = [
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -211,9 +201,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-WHITENOISE_AUTOREFRESH = DEBUG
-WHITENOISE_USE_FINDERS = DEBUG
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
@@ -222,7 +209,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # media files config
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.environ.get('MEDIA_ROOT', os.path.join(BASE_DIR, 'media/'))
+MEDIA_ROOT = BASE_DIR / 'media'
 
 
 # default user model
@@ -304,7 +291,7 @@ DEFAULT_FROM_EMAIL = os.environ.get(
     'DEFAULT_FROM_EMAIL',
     EMAIL_HOST_USER or 'no-reply@example.com'
 )
-SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'support@foxsourcecode.com')
+SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'support@foxcodeshub.com')
 
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
@@ -337,3 +324,5 @@ CLOUDINARY_STORAGE = {
 
 if all(CLOUDINARY_STORAGE.values()):
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+else:
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
