@@ -28,19 +28,15 @@ export const axiosFetchInstance = axios.create({
 
 export const handleUnauthorized = error => {
     const { response } = error
+
+    // Network / CORS errors have no response — log and bail
+    if (!response) {
+        console.error('Network or CORS error:', error.message)
+        return
+    }
+
     const originalRequest = response.config
 
-    if (typeof error === 'undefined') {
-        message.error(
-            `A server/network error 
-            looks like cors may be the problem
-            sorry about this, we will get it fixed shortly`,
-            3
-        );
-        setTimeout(async()=> {
-            await axiosFetchInstance(originalRequest)
-        },3000)
-    }
     if (
         response.status === 401 && 
         response.data.detail === "Authentication credentials were not provided." &&
@@ -66,10 +62,7 @@ export const handleUnauthorized = error => {
             .then(res => {
                 localStorage.setItem('foxCodes_accessToken', res.data.access_token);
                 localStorage.setItem('foxCodes_refreshToken', res.data.refresh_token);
-                console.log(res.data.access_token)
-                console.log(originalRequest)
                 originalRequest.headers['Authorization'] = `Bearer ${res.data.access_token}`;
-                console.log(originalRequest)
                 return axiosFetchInstance(originalRequest)
             })
             .catch(error => console.log(error))
@@ -80,7 +73,7 @@ export const handleUnauthorized = error => {
     }
     if (
         response.status === 401 &&
-        originalRequest.data.refresh_token
+        originalRequest.data?.refresh_token
     ) window.location.href = '/login'
 }
 
