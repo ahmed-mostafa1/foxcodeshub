@@ -1,5 +1,9 @@
 # AGENTS.md
 
+# django pull to server from github command is
+
+cd /home/ahmed/web/api.foxcodeshub.com/app/Backend && ./deploy-django
+
 ## Project Overview
 
 This repository is split into two independent applications:
@@ -20,7 +24,8 @@ There is no single root app runner or workspace toolchain. Work inside `Backend/
 - `Frontend/src/components/`: UI grouped by feature area.
 - `Frontend/src/Axios.js`: shared API clients and token refresh handling.
 - `Frontend/src/App.js`: router, auth bootstrap, and app-wide context.
-foxcodeshub.com
+  foxcodeshub.com
+
 ## Local Setup
 
 Backend:
