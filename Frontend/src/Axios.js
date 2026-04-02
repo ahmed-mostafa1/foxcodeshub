@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { message } from 'antd';
-import { API_BASE_URL, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET } from './config';
+import { API_BASE_URL, OAUTH_CLIENT_ID } from './config';
 
 const baseUrl = API_BASE_URL
 
@@ -38,97 +38,48 @@ export const handleUnauthorized = error => {
     const originalRequest = response.config
 
     if (
-        response.status === 401 && 
+        response.status === 401 &&
         response.data.detail === "Authentication credentials were not provided." &&
         response.statusText === "Unauthorized"
-        ){
-            window.location.href = '/login'
+    ) {
+        window.location.href = '/login'
     }
+
     if (
         response.status === 401 &&
         response.data.detail === "Invalid token header. No credentials provided." &&
         response.statusText === "Unauthorized"
-    ){
+    ) {
         const refresh_token = localStorage.getItem('foxCodes_refreshToken')
-        if (refresh_token){
-            const body = JSON.stringify({
-                grant_type: "refresh_token",
-                client_id: OAUTH_CLIENT_ID,
-                client_secret: OAUTH_CLIENT_SECRET,
-                refresh_token
-            })
+
+        if (refresh_token) {
+            const params = new URLSearchParams();
+            params.append("grant_type", "refresh_token");
+            params.append("client_id", OAUTH_CLIENT_ID);
+            params.append("refresh_token", refresh_token);
+
             axiosInstance
-            .post('/account/auth/token/', body)
-            .then(res => {
-                localStorage.setItem('foxCodes_accessToken', res.data.access_token);
-                localStorage.setItem('foxCodes_refreshToken', res.data.refresh_token);
-                originalRequest.headers['Authorization'] = `Bearer ${res.data.access_token}`;
-                return axiosFetchInstance(originalRequest)
-            })
-            .catch(error => console.log(error))
+                .post('/account/auth/token/', params, {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                })
+                .then(res => {
+                    localStorage.setItem('foxCodes_accessToken', res.data.access_token);
+                    localStorage.setItem('foxCodes_refreshToken', res.data.refresh_token);
+
+                    originalRequest.headers['Authorization'] = `Bearer ${res.data.access_token}`;
+                    return axiosFetchInstance(originalRequest)
+                })
+                .catch(error => console.log(error))
         } else {
             window.location.href = '/login'
         }
 
     }
+
     if (
         response.status === 401 &&
         originalRequest.data?.refresh_token
     ) window.location.href = '/login'
 }
-
-// axiosFetchInstance.interceptors.response.use(
-//     (response) => {
-//         return response
-//     },
-
-//     async function (error) {
-//         const originalRequest = error.config;
-
-//         if (typeof error.response == 'undefined') {
-//             alert(
-//                 `A server/network error 
-//                 looks like cors may be the problem
-//                 sorry about this, we will get it fixed shortly`
-//             );
-//             return Promise.reject(error);
-//         };
-
-//         if (
-//             error.response.status === 401 &&
-//             originalRequest.url === baseUrl + '/account/auth/refresh'
-//         ) {
-//             window.location.href = '/';
-//             return Promise.reject(error);
-//         }
-
-//         if (
-//             error.response.data.code === 'token_not_valid' &&
-//             error.response.status === 401 &&
-//             error.response.statusText === 'unauthorized'
-//         ) {
-//             const refresh_token = localStorage.getItem('foxCodes_refreshToken');
-//             if (refresh_token) {
-//                 return axiosFetchInstance
-//                     .post('/account/auth/refresh', { refresh: refresh_token })
-//                     .then((res) => {
-//                         localStorage.setItem('foxCodes_accessToken', res.data.access_token);
-//                         localStorage.setItem('foxCodes_refreshToken', res.data.refresh_token);
-
-//                         axiosFetchInstance.defaults.headers['Authorization'] = `Bearer ${res.data.access_token}`;
-//                         originalRequest.defaults.headers['Authorization'] = `Bearer ${res.data.access_token}`;
-
-//                         return axiosFetchInstance(originalRequest);
-
-//                     }).catch((err) => {
-//                         // console.log(err)
-//                     })
-//             } else {
-//                 // console.log('refresh token not available')
-//                 window.location.href = '/'
-//             }
-//         }
-
-
-//     }
-// )

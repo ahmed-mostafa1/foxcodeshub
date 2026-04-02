@@ -13,7 +13,5 @@ export const SITE_URL = trimTrailingSlash(
 export const OAUTH_CLIENT_ID =
   process.env.REACT_APP_OAUTH_CLIENT_ID || "local-dev-client-id";
 
-export const OAUTH_CLIENT_SECRET =
-  process.env.REACT_APP_OAUTH_CLIENT_SECRET || "local-dev-client-secret";
 
 export const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID || "";

@@ -14,7 +14,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import ItemPage from './pages/ItemPage';
 import { axiosFetchInstance, axiosInstance, handleUnauthorized } from './Axios'
 import { FacebookFilled, InstagramFilled, TwitterCircleFilled, MailFilled } from '@ant-design/icons'
-import { API_HOST, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET } from './config';
+import { API_HOST, OAUTH_CLIENT_ID } from './config';
 
 const { Header, Footer } = Layout;
 export const UserContext = React.createContext()
@@ -25,7 +25,6 @@ const App = props => {
 
     const [authedUser, setAuthedUser] = React.useState()
     const client_id = OAUTH_CLIENT_ID
-    const client_secret = OAUTH_CLIENT_SECRET
     const host = API_HOST
     React.useEffect(() => {
         if (localStorage.getItem('foxCodes_accessToken')){
@@ -44,7 +43,7 @@ const App = props => {
     }, [])
 
     return (
-    <UserContext.Provider value={{authedUser, setAuthedUser, client_id, client_secret, host}}>
+    <UserContext.Provider value={{authedUser, setAuthedUser, client_id, host}}>
     <BrowserRouter>
     <Layout style={{minHeight:'100vh'}}>
         <Header style={{backgroundColor:'#fff'}}>
