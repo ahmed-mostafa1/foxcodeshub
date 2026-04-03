@@ -3,6 +3,8 @@ import './RegisterForm.css';
 import axios from 'axios';
 import { Form, Input, Button, Layout, message } from 'antd';
 import { Link } from 'react-router-dom';
+import { OAUTH_CLIENT_ID } from '../../config';
+
 
 const { Content } = Layout;
 
@@ -38,8 +40,7 @@ function LoginForm() {
     params.append('grant_type', 'password');
     params.append('username', values.email.toLowerCase().trim());
     params.append('password', values.password);
-    params.append('client_id', process.env.REACT_APP_OAUTH_CLIENT_ID);
-
+    params.append('client_id', OAUTH_CLIENT_ID);
     axios.post(
       'https://api.foxcodeshub.com/api/account/auth/token/',
       params.toString(),
@@ -56,11 +57,10 @@ function LoginForm() {
         window.location.href = '/';
       })
       .catch((error) => {
-        console.log(error.response?.data);
-        if (error.response?.data?.error_description === 'Invalid credentials given.') {
-          message.error('invalid email or password', 8);
+        if (error.response?.data?.error_description === "Invalid credentials given.") {
+          message.error("invalid email or password", 8);
         } else {
-          message.error('login failed', 8);
+          message.error("login failed", 8);
         }
       });
   };
