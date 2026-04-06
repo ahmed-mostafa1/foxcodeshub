@@ -20,6 +20,7 @@ import {
     MailFilled
 } from '@ant-design/icons';
 import { API_HOST, OAUTH_CLIENT_ID } from './config';
+import AdBanner from './components/common/AdBanner';
 
 const { Header, Footer } = Layout;
 export const UserContext = React.createContext();
@@ -89,6 +90,11 @@ const App = () => {
                         </div>
                         <Navbar />
                     </Header>
+
+                    <AdBanner
+                        location="banner_top"
+                        style={{ background: '#f9f9f9', padding: '0.5rem 0', borderBottom: '1px solid #eee' }}
+                    />
 
                     <Routes>
                         <Route path='/' element={<Home />} />

@@ -17,3 +17,4 @@ django-cloudinary-storage==0.3.0
 django-admin-interface==0.19.0
 django-extensions==3.1.5
 django-debug-toolbar==3.2.4
+stripe>=5.0.0

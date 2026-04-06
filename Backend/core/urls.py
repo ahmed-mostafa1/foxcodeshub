@@ -21,8 +21,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/account/', include('account.api.v1.urls')),
     path('api/', include('items.api.v1.urls')),
-    path('api/payments/', include('transactions.api.v1.urls'))
-
+    path('api/payments/', include('transactions.api.v1.urls')),
+    path('api/ads/', include('ads.api.v1.urls')),
 ]
 
 if 'debug_toolbar' in settings.INSTALLED_APPS:

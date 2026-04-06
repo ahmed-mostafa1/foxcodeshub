@@ -14,12 +14,18 @@ class Payment(models.Model):
     trans_id = models.CharField(max_length=255)
     buyer = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='payments')
-    buyer_paypal_id = models.CharField(max_length=255)
+    buyer_paypal_id = models.CharField(max_length=255, blank=True, default='')
     seller = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='earnings')
     item = models.ForeignKey(
         Item, on_delete=models.SET_NULL, null=True, related_name='downloads')
-    paypal_email = models.EmailField(max_length=255)
+    paypal_email = models.EmailField(max_length=255, blank=True, default='')
+    stripe_payment_intent_id = models.CharField(max_length=255, blank=True, null=True)
+    payment_method = models.CharField(
+        max_length=20,
+        choices=[('paypal', 'PayPal'), ('stripe', 'Stripe')],
+        default='paypal'
+    )
     date = models.DateTimeField(default=timezone.now)
     total_amount = models.IntegerField()
     net_amount = models.FloatField()

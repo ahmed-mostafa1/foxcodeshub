@@ -89,6 +89,7 @@ INSTALLED_APPS = [
     'account.apps.AccountConfig',
     'items',
     'transactions',
+    'ads',
 
     # 3rd party
     'corsheaders',
@@ -303,6 +304,12 @@ OAUTH_CLIENT_SECRET = os.environ.get(
     'local-dev-client-secret'
 )
 PAYPAL_USE_SANDBOX = env_bool('PAYPAL_USE_SANDBOX', DEBUG)
+
+# Stripe settings
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', 'sk_test_PLACEHOLDER')
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', 'pk_test_PLACEHOLDER')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', 'whsec_PLACEHOLDER')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
 PAYPAL_CLIENT_ID = os.environ.get(
     "PAYPAL_CLIENT_ID" if PAYPAL_USE_SANDBOX else "PAYPAL_CLIENT_ID_LIVE",
