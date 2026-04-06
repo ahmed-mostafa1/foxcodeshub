@@ -11,6 +11,7 @@ import {
   Avatar,
   message,
   Spin,
+  Tag,
 } from "antd";
 import { LockOutlined, DownloadOutlined, CreditCardOutlined } from "@ant-design/icons";
 import { ItemContext } from "../../pages/ItemPage";
@@ -70,6 +71,14 @@ const ItemPurchase = ({ onDownload }) => {
 
         {/* ── Purchase card ── */}
         <Card title="Purchase" bordered={true} style={{ width: "100%" }}>
+          {hasPurchased && (
+            <Tag
+              color="success"
+              style={{ marginBottom: "0.75rem", fontSize: "0.85rem", padding: "4px 10px" }}
+            >
+              ✅ Already Purchased
+            </Tag>
+          )}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Form.Item required>
               <Select placeholder="License..." onChange={licenseChange}>
