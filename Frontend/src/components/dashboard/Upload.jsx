@@ -15,7 +15,6 @@ import {
 } from "antd";
 import { InboxOutlined, PlusOutlined } from "@ant-design/icons";
 import { useLocation } from "react-router-dom";
-import { UserContext } from "../../App";
 import { axiosFetchInstance, handleUnauthorized } from "../../Axios";
 import QueryString from "query-string";
 const { TextArea } = Input;
@@ -24,9 +23,8 @@ const { Dragger } = Upload;
 const { Option } = Select;
 const { Title } = Typography;
 
-const UploadItem = (props) => {
+const UploadItem = () => {
   const [form] = Form.useForm();
-  const { authedUser } = React.useContext(UserContext);
   const [initialValues, setInitialValues] = React.useState(false);
   const [current, setCurrent] = React.useState(0);
   const [catigoriesOptions, setCatigoriesOptions] = React.useState([]);
@@ -42,8 +40,8 @@ const UploadItem = (props) => {
   const [productDetails, setProductDetails] = React.useState({});
   const [catigory, setCatigory] = React.useState("");
   const [subcatigory, setSubcatigory] = React.useState("");
-  const [frameworks, setFrameworks] = React.useState([]);
-  const [file_types, setFile_types] = React.useState("");
+  const [frameworks, setFrameworks] = React.useState({});
+  const [file_types, setFile_types] = React.useState([]);
   // const [zip_file, setZip_file] = React.useState();
   const itemName = React.useRef();
   const itemShortDesc = React.useRef();
@@ -59,7 +57,7 @@ const UploadItem = (props) => {
   const location = useLocation();
   const query = QueryString.parse(location.search);
 
-  React.useMemo(() => {
+  React.useEffect(() => {
     axiosFetchInstance
       .get("/catigories/")
       .then((res) => {
@@ -98,11 +96,11 @@ const UploadItem = (props) => {
             : console.log(error.response);
         });
     } else setInitialValues({});
-  }, []);
+  }, [query.item]);
 
   const addItem = () => {
     let data;
-    const main = new FormData();
+    let main = new FormData();
     try {
       // main.append("zip_file", zip_file, zip_file.name);
       main.append("icon_img", icon, icon.name);
@@ -124,8 +122,8 @@ const UploadItem = (props) => {
       return;
     }
     const nf = [];
-    Object.keys(frameworks).map((key) => {
-      frameworks[key].map((f) => nf.push(f));
+    Object.keys(frameworks).forEach((key) => {
+      frameworks[key].forEach((f) => nf.push(f));
     });
     console.log(nf);
 
@@ -205,29 +203,47 @@ const UploadItem = (props) => {
   const handleSteps = (move) => {
     if (move === "next") {
       if (current === 0) {
-        console.log(itemName.current);
-        const data = {
-          name: itemName.current.props.value,
-          short_describtion: itemShortDesc.current.props.value,
-          catigory,
-          subcatigory,
-          describtion: itemDesc.current.resizableTextArea.props.value,
-          features: itemFeatures.current.resizableTextArea.props.value,
-          demo_url: itemDemoUrl.current.props.value,
-          test_apk: itemTestApk.current.props.value,
-          test_ios: itemTestIos.current.props.value,
-          youtube_url: itemYTurl.current.props.value,
-        };
-        console.log(data);
-        setProductDetails(data);
-      }
-      if (
-        catigory === "" ||
-        subcatigory === "" ||
-        file_types === "" ||
-        frameworks.length < 1
-      ) {
-        message.error("please fill all fields", 5);
+        form
+          .validateFields([
+            "name",
+            "short_desc",
+            "catigory",
+            "subcatigory",
+            "desc",
+            "features",
+            "demo_url",
+          ])
+          .then((values) => {
+            const selectedFrameworksCount = Object.values(frameworks).reduce(
+              (count, selectedValues) => count + selectedValues.length,
+              0
+            );
+
+            if (
+              file_types.length < 1 ||
+              (fwOptions.length > 0 && selectedFrameworksCount < 1)
+            ) {
+              message.error("please fill all fields", 5);
+              return;
+            }
+
+            setProductDetails({
+              name: values.name,
+              short_describtion: values.short_desc,
+              catigory,
+              subcatigory,
+              describtion: values.desc,
+              features: values.features,
+              demo_url: values.demo_url,
+              test_apk: values.test_apk || "",
+              test_ios: values.test_ios || "",
+              youtube_url: values.youtube_url || "",
+            });
+            setCurrent(current + 1);
+          })
+          .catch(() => {
+            message.error("please fill all fields", 5);
+          });
         return;
       }
       setCurrent(current + 1);
@@ -276,6 +292,18 @@ const UploadItem = (props) => {
 
   //////// Select Options //////////
   const catigoryChange = (value) => {
+    setCatigory(value);
+    setSubcatigory("");
+    setFrameworks({});
+    setFile_types([]);
+    setSubOptions([]);
+    setFwOptions([]);
+    setFileOptions([]);
+    form.setFieldsValue({
+      subcatigory: undefined,
+      file_types: [],
+    });
+
     axiosFetchInstance
       .get(`/options/${value}/`)
       .then((res) => {
@@ -289,7 +317,6 @@ const UploadItem = (props) => {
           ? handleUnauthorized(error)
           : console.log(error.response);
       });
-    setCatigory(value);
   };
   const subCatigoryChange = (value) => {
     setSubcatigory(value);
@@ -301,10 +328,6 @@ const UploadItem = (props) => {
   const handleFiles = (values) => {
     setFile_types(values);
   };
-  const handleFW = (values) => {
-    console.log(values);
-    setFrameworks(values);
-  };
   ////////// Checkbox Groups /////////
 
   const steps = [
@@ -312,12 +335,22 @@ const UploadItem = (props) => {
       title: "Product details",
       content: (
         <Form initialValues={initialValues} layout="vertical" form={form}>
-          <Form.Item name="name" label="Name">
+          <Form.Item
+            name="name"
+            label="Name"
+            rules={[{ required: true, message: "Please enter the item name" }]}
+          >
             <Input required ref={itemName} placeholder="Name" />
           </Form.Item>
           <Form.Item
             name="short_desc"
             label="Short Describtion (Max 80 Characters)"
+            rules={[
+              {
+                required: true,
+                message: "Please enter a short description",
+              },
+            ]}
           >
             <Input
               required
@@ -325,7 +358,11 @@ const UploadItem = (props) => {
               placeholder="Short Describtion"
             />
           </Form.Item>
-          <Form.Item name="catigory" label="Catigory">
+          <Form.Item
+            name="catigory"
+            label="Catigory"
+            rules={[{ required: true, message: "Please select a category" }]}
+          >
             <Select
               required
               placeholder="Catigory..."
@@ -341,7 +378,13 @@ const UploadItem = (props) => {
               })}
             </Select>
           </Form.Item>
-          <Form.Item name="subcatigory" label="Subcatigory">
+          <Form.Item
+            name="subcatigory"
+            label="Subcatigory"
+            rules={[
+              { required: true, message: "Please select a subcategory" },
+            ]}
+          >
             <Select
               required
               disabled={subsOptions.length ? false : true}
@@ -387,15 +430,28 @@ const UploadItem = (props) => {
               onChange={handleFiles}
             />
           </Form.Item>
-          <Form.Item name="desc" label="Describtion">
+          <Form.Item
+            name="desc"
+            label="Describtion"
+            rules={[
+              { required: true, message: "Please enter the description" },
+            ]}
+          >
             <TextArea required ref={itemDesc} placeholder="Describtion" />
           </Form.Item>
-          <Form.Item name="features" label="Features">
+          <Form.Item
+            name="features"
+            label="Features"
+            rules={[{ required: true, message: "Please enter the features" }]}
+          >
             <TextArea required ref={itemFeatures} placeholder="Features" />
           </Form.Item>
           <Form.Item
             name="demo_url"
             label="Live Demo URL: (eg. your URL or Google Drive)"
+            rules={[
+              { required: true, message: "Please enter the demo URL" },
+            ]}
           >
             <Input
               required
