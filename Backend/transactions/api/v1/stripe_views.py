@@ -21,6 +21,17 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 logger = logging.getLogger(__name__)
 
 
+def stripe_value(obj, key, default=None):
+    if obj is None:
+        return default
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    try:
+        return obj[key]
+    except Exception:
+        return getattr(obj, key, default)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_stripe_checkout_session(request):
@@ -89,12 +100,10 @@ class StripeWebhookView(View):
 
         try:
             session = event['data']['object']
-            if hasattr(session, 'to_dict_recursive'):
-                session = session.to_dict_recursive()
-            payment_intent_id = session.get('payment_intent')
-            metadata = session.get('metadata', {})
-            item_id = metadata.get('item_id')
-            user_id = metadata.get('user_id')
+            payment_intent_id = stripe_value(session, 'payment_intent')
+            metadata = stripe_value(session, 'metadata', {}) or {}
+            item_id = stripe_value(metadata, 'item_id')
+            user_id = stripe_value(metadata, 'user_id')
 
             if not item_id or not user_id or not payment_intent_id:
                 return HttpResponse(status=400)
