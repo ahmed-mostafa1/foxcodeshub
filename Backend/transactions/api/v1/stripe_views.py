@@ -1,5 +1,6 @@
 import stripe
 from django.conf import settings
+from django.db import IntegrityError
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -97,6 +98,11 @@ class StripeWebhookView(View):
         if Payment.objects.filter(stripe_payment_intent_id=payment_intent_id).exists():
             return HttpResponse(status=200)
 
+        # Users can only own one payment per item in this project.
+        # If the purchase already exists, acknowledge the webhook so Stripe stops retrying.
+        if Payment.objects.filter(buyer_id=user_id, item_id=item_id).exists():
+            return HttpResponse(status=200)
+
         try:
             buyer = UserProfile.objects.get(pk=user_id)
             item = Item.objects.get(pk=item_id)
@@ -115,7 +121,10 @@ class StripeWebhookView(View):
             total_amount=price,
             net_amount=price * 0.75,
         )
-        payment.save()
+        try:
+            payment.save()
+        except IntegrityError:
+            return HttpResponse(status=200)
 
         try:
             Util.send_email({

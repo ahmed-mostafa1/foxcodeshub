@@ -144,3 +144,44 @@ class StripeCheckoutTests(TestCase):
             1,
         )
         self.assertEqual(mock_send_email.call_count, 2)
+
+    @patch('transactions.api.v1.stripe_views.Util.send_email')
+    @patch('transactions.api.v1.stripe_views.stripe.Webhook.construct_event')
+    def test_webhook_returns_200_when_item_is_already_purchased(self, mock_construct_event, mock_send_email):
+        Payment.objects.create(
+            trans_id='pi_existing',
+            stripe_payment_intent_id='pi_existing',
+            payment_method='stripe',
+            buyer=self.buyer,
+            seller=self.seller,
+            item=self.item,
+            total_amount=80,
+            net_amount=60.0,
+        )
+
+        mock_construct_event.return_value = {
+            'type': 'checkout.session.completed',
+            'data': {
+                'object': {
+                    'payment_intent': 'pi_test_second_attempt',
+                    'metadata': {
+                        'item_id': str(self.item.id),
+                        'user_id': str(self.buyer.id),
+                    },
+                },
+            },
+        }
+
+        response = self.client.post(
+            '/api/payments/webhook/stripe/',
+            data=b'{}',
+            content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='stripe-signature',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Payment.objects.filter(buyer=self.buyer, item=self.item).count(),
+            1,
+        )
+        mock_send_email.assert_not_called()
