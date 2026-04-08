@@ -110,6 +110,42 @@ class StripeCheckoutTests(TestCase):
 
     @patch('transactions.api.v1.stripe_views.Util.send_email')
     @patch('transactions.api.v1.stripe_views.stripe.Webhook.construct_event')
+    def test_webhook_accepts_stripe_object_payloads(self, mock_construct_event, mock_send_email):
+        class FakeStripeObject:
+            def __init__(self, data):
+                self.data = data
+
+            def to_dict_recursive(self):
+                return self.data
+
+        mock_construct_event.return_value = {
+            'type': 'checkout.session.completed',
+            'data': {
+                'object': FakeStripeObject({
+                    'payment_intent': 'pi_test_object_payload',
+                    'metadata': {
+                        'item_id': str(self.item.id),
+                        'user_id': str(self.buyer.id),
+                    },
+                }),
+            },
+        }
+
+        response = self.client.post(
+            '/api/payments/webhook/stripe/',
+            data=b'{}',
+            content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='stripe-signature',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payment = Payment.objects.get(stripe_payment_intent_id='pi_test_object_payload')
+        self.assertEqual(payment.buyer, self.buyer)
+        self.assertEqual(payment.item, self.item)
+        self.assertEqual(mock_send_email.call_count, 2)
+
+    @patch('transactions.api.v1.stripe_views.Util.send_email')
+    @patch('transactions.api.v1.stripe_views.stripe.Webhook.construct_event')
     def test_webhook_is_idempotent_for_duplicate_events(self, mock_construct_event, mock_send_email):
         mock_construct_event.return_value = {
             'type': 'checkout.session.completed',

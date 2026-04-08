@@ -89,6 +89,8 @@ class StripeWebhookView(View):
 
         try:
             session = event['data']['object']
+            if hasattr(session, 'to_dict_recursive'):
+                session = session.to_dict_recursive()
             payment_intent_id = session.get('payment_intent')
             metadata = session.get('metadata', {})
             item_id = metadata.get('item_id')
