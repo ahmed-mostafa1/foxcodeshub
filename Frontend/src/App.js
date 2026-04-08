@@ -30,43 +30,50 @@ const App = () => {
     const client_id = OAUTH_CLIENT_ID;
     const host = API_HOST;
 
-    React.useEffect(() => {
-        const fetchDashboard = async () => {
-            const accessToken = localStorage.getItem('foxCodes_accessToken');
+    const refreshAuthedUser = React.useCallback(async () => {
+        const accessToken = localStorage.getItem('foxCodes_accessToken');
 
-            if (!accessToken) {
-                setAuthedUser({});
-                return;
-            }
+        if (!accessToken) {
+            setAuthedUser({});
+            return {};
+        }
 
+        try {
+            const res = await axiosFetchInstance.get('/account/dashboard/');
+            const userData = res.data || {};
+            setAuthedUser(userData);
+            return userData;
+        } catch (error) {
             try {
-                const res = await axiosFetchInstance.get('/account/dashboard/');
-                setAuthedUser(res.data || {});
-            } catch (error) {
-                try {
-                    const retryResponse = await handleUnauthorized(error);
+                const retryResponse = await handleUnauthorized(error);
 
-                    if (retryResponse && retryResponse.data) {
-                        setAuthedUser(retryResponse.data);
-                    } else {
-                        setAuthedUser({});
-                    }
-                } catch (err) {
-                    console.log(err?.response || err);
-                    setAuthedUser({});
+                if (retryResponse && retryResponse.data) {
+                    setAuthedUser(retryResponse.data);
+                    return retryResponse.data;
                 }
-            }
-        };
 
-        fetchDashboard();
+                setAuthedUser({});
+                return {};
+            } catch (err) {
+                console.log(err?.response || err);
+                setAuthedUser({});
+                return {};
+            }
+        }
     }, []);
+
+    React.useEffect(() => {
+        refreshAuthedUser();
+    }, [refreshAuthedUser]);
 
     if (authedUser === null) {
         return null;
     }
 
     return (
-        <UserContext.Provider value={{ authedUser, setAuthedUser, client_id, host }}>
+        <UserContext.Provider
+            value={{ authedUser, setAuthedUser, refreshAuthedUser, client_id, host }}
+        >
             <BrowserRouter>
                 <Layout style={{ minHeight: '100vh' }}>
                     <Header style={{ backgroundColor: '#fff' }}>

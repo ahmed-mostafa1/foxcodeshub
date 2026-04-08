@@ -10,14 +10,13 @@ import {
   Typography,
   Avatar,
   message,
-  Spin,
   Tag,
 } from "antd";
 import { LockOutlined, DownloadOutlined, CreditCardOutlined } from "@ant-design/icons";
 import { ItemContext } from "../../pages/ItemPage";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { UserContext } from "../../App";
-import { axiosFetchInstance, handleUnauthorized } from "../../Axios";
+import { axiosFetchInstance } from "../../Axios";
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -25,10 +24,11 @@ const { Meta } = Card;
 
 const ItemPurchase = ({ onDownload }) => {
   const { item } = React.useContext(ItemContext);
-  const { host, authedUser } = React.useContext(UserContext);
-  const [loading, setLoading] = React.useState(item ? false : true);
+  const { authedUser, refreshAuthedUser } = React.useContext(UserContext);
+  const location = useLocation();
   const [ftypes, setFtypes] = React.useState();
   const [stripeLoading, setStripeLoading] = React.useState(false);
+  const paymentSyncHandledRef = React.useRef(false);
 
   React.useEffect(() => {
     let ft = new Set();
@@ -41,6 +41,78 @@ const ItemPurchase = ({ onDownload }) => {
     authedUser &&
     authedUser.payments &&
     authedUser.payments.find((p) => p.item === item.id);
+  const paymentStatus = new URLSearchParams(location.search).get("payment");
+
+  React.useEffect(() => {
+    if (paymentStatus !== "success" || !authedUser?.id || !item?.id) {
+      paymentSyncHandledRef.current = false;
+      return;
+    }
+
+    if (paymentSyncHandledRef.current) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const clearPaymentQuery = () => {
+      const params = new URLSearchParams(location.search);
+      params.delete("payment");
+      const nextQuery = params.toString();
+      window.history.replaceState(
+        {},
+        "",
+        `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}`
+      );
+    };
+
+    const wait = (ms) =>
+      new Promise((resolve) => {
+        window.setTimeout(resolve, ms);
+      });
+
+    const syncPurchase = async () => {
+      paymentSyncHandledRef.current = true;
+
+      if (hasPurchased) {
+        message.success("Payment confirmed. Download is now available.", 4);
+        clearPaymentQuery();
+        return;
+      }
+
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        const userData = await refreshAuthedUser();
+
+        if (cancelled) {
+          return;
+        }
+
+        const payments = userData?.payments || [];
+        if (payments.find((payment) => payment.item === item.id)) {
+          message.success("Payment confirmed. Download is now available.", 4);
+          clearPaymentQuery();
+          return;
+        }
+
+        await wait(2000);
+
+        if (cancelled) {
+          return;
+        }
+      }
+
+      message.info(
+        "Payment succeeded, but purchase sync is still pending. Refresh in a few seconds if download stays locked.",
+        6
+      );
+    };
+
+    syncPurchase();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authedUser?.id, hasPurchased, item?.id, location.search, paymentStatus, refreshAuthedUser]);
 
   const handleStripeCheckout = async () => {
     if (!authedUser || !authedUser.id) {
@@ -203,7 +275,7 @@ const ItemPurchase = ({ onDownload }) => {
 
       {/* ── Seller card ── */}
       <div className="site-card-border-less-wrapper">
-        <Card style={{ width: "100%" }} loading={loading}>
+        <Card style={{ width: "100%" }}>
           <Meta
             avatar={
               <Avatar shape="circle" size={64} src={`${item.seller.profile_pic}`} />
