@@ -10,6 +10,9 @@ class NewRepresent(serializers.StringRelatedField):
 class PaymentSerializer(serializers.ModelSerializer):
     item = NewRepresent()
     seller = NewRepresent()
+    item_id = serializers.IntegerField(source='item.id', read_only=True)
+    seller_id = serializers.IntegerField(source='seller.id', read_only=True)
+
     class Meta:
         model = Payment
         fields = '__all__'

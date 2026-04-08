@@ -40,7 +40,7 @@ const ItemPurchase = ({ onDownload }) => {
   const hasPurchased =
     authedUser &&
     authedUser.payments &&
-    authedUser.payments.find((p) => p.item === item.id);
+    authedUser.payments.find((p) => p.item_id === item.id);
   const paymentStatus = new URLSearchParams(location.search).get("payment");
 
   React.useEffect(() => {
@@ -88,7 +88,7 @@ const ItemPurchase = ({ onDownload }) => {
         }
 
         const payments = userData?.payments || [];
-        if (payments.find((payment) => payment.item === item.id)) {
+        if (payments.find((payment) => payment.item_id === item.id)) {
           message.success("Payment confirmed. Download is now available.", 4);
           clearPaymentQuery();
           return;
