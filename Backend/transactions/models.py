@@ -34,7 +34,9 @@ class Payment(models.Model):
         unique_together = ('buyer', 'item')
 
     def __str__(self):
-        return f'{self.buyer.username} purchased {self.item.name}'
+        buyer_name = self.buyer.username if self.buyer else 'Unknown buyer'
+        item_name = self.item.name if self.item else 'deleted item'
+        return f'{buyer_name} purchased {item_name}'
 
 
 class Withdraw(models.Model):

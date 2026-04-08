@@ -228,8 +228,9 @@ class UserDataSerializer(serializers.ModelSerializer):
     def get_downloads(self, obj):
         if hasattr(obj, 'payments'):
             dl = []
-            for d in obj.payments.all():
-                dl.append(d.item)
+            for d in obj.payments.select_related('item').all():
+                if d.item_id and d.item is not None:
+                    dl.append(d.item)
             return ItemSerializer(
                 instance=dl,
                 many=True
