@@ -41,8 +41,6 @@ const UploadItem = () => {
   const [preview, setPreview] = React.useState("");
   const [demoVideo, setDemoVideo] = React.useState("");
   const [productDetails, setProductDetails] = React.useState({});
-  const [catigory, setCatigory] = React.useState("");
-  const [subcatigory, setSubcatigory] = React.useState("");
   const [frameworks, setFrameworks] = React.useState({});
   const [file_types, setFile_types] = React.useState([]);
   // const [zip_file, setZip_file] = React.useState();
@@ -61,6 +59,35 @@ const UploadItem = () => {
   const query = QueryString.parse(location.search);
 
   const getUploadFile = (file) => file.originFileObj || file;
+  const isEditMode = Boolean(query.item);
+
+  const mapFrameworksByType = (selectedFrameworks) => {
+    return selectedFrameworks.reduce((acc, framework) => {
+      if (!acc[framework.ftype]) {
+        acc[framework.ftype] = [];
+      }
+
+      acc[framework.ftype].push(framework.id);
+      return acc;
+    }, {});
+  };
+
+  const loadCategoryOptions = (value) => {
+    return axiosFetchInstance
+      .get(`/options/${value}/`)
+      .then((res) => {
+        setSubOptions(res.data.subcatigories);
+        setFwOptions(res.data.framework_types);
+        setFileOptions(res.data.file_types);
+        return res.data;
+      })
+      .catch((error) => {
+        !error.response || error.response.status === 401
+          ? handleUnauthorized(error)
+          : console.log(error.response);
+        throw error;
+      });
+  };
 
   const validateDemoVideo = (file) => {
     const isVideo =
@@ -119,74 +146,131 @@ const UploadItem = () => {
   };
 
   React.useEffect(() => {
-    axiosFetchInstance
-      .get("/catigories/")
-      .then((res) => {
-        console.log(res.data);
-        setCatigoriesOptions(res.data);
-      })
-      .catch((error) => {
+    let isMounted = true;
+
+    const loadInitialData = async () => {
+      try {
+        const categoriesResponse = await axiosFetchInstance.get("/catigories/");
+
+        if (!isMounted) {
+          return;
+        }
+
+        const categories = categoriesResponse.data;
+        setCatigoriesOptions(categories);
+
+        if (!query.item) {
+          form.resetFields();
+          setFrameworks({});
+          setFile_types([]);
+          setSubOptions([]);
+          setFwOptions([]);
+          setFileOptions([]);
+          setInitialValues({});
+          return;
+        }
+
+        const itemResponse = await axiosFetchInstance.get(
+          `/item-details/${query.item}/`
+        );
+
+        if (!isMounted) {
+          return;
+        }
+
+        const item = itemResponse.data;
+        const selectedCategory = categories.find(
+          (category) => category.name === item.catigory
+        );
+        const selectedSubcatigory = selectedCategory?.sub_catigories.find(
+          (subCategory) => subCategory.name === item.sub_catigory
+        );
+        const selectedFrameworks = mapFrameworksByType(item.frameworks || []);
+        const selectedFileTypes = (item.file_types || []).map((file) => file.id);
+
+        if (selectedCategory) {
+          await loadCategoryOptions(selectedCategory.id);
+        }
+
+        if (!isMounted) {
+          return;
+        }
+
+        const nextInitialValues = {
+          name: item.name,
+          short_desc: item.short_describtion,
+          catigory: selectedCategory?.id,
+          subcatigory: selectedSubcatigory?.id,
+          file_types: selectedFileTypes,
+          desc: item.describtion,
+          demo_url: item.demo_url,
+          test_apk: item.test_apk,
+          test_ios: item.test_ios,
+          youtube_url: item.youtube_url,
+          size: item.size,
+          features: item.featurs,
+          price: item.price,
+          file_url: item.file_url,
+          ...selectedFrameworks,
+        };
+
+        setFrameworks(selectedFrameworks);
+        setFile_types(selectedFileTypes);
+        setInitialValues(nextInitialValues);
+        form.resetFields();
+        form.setFieldsValue(nextInitialValues);
+      } catch (error) {
+        console.log(error);
         !error.response || error.response.status === 401
           ? handleUnauthorized(error)
           : console.log(error.response);
-      });
-    if (query.item) {
-      axiosFetchInstance
-        .get(`/item-details/${query.item}/`)
-        .then((res) => {
-          const item = res.data;
-          setInitialValues({
-            name: item.name,
-            short_desc: item.short_describtion,
-            file_types: item.file_types.map((f) => f.id),
-            desc: item.describtion,
-            demo_url: item.demo_url,
-            test_apk: item.test_apk,
-            test_ios: item.test_ios,
-            youtube_url: item.youtube_url,
-            size: item.size,
-            features: item.featurs,
-            price: item.price,
-            file_url: item.file_url,
-          });
-        })
-        .catch((error) => {
-          console.log(error);
-          !error.response || error.response.status === 401
-            ? handleUnauthorized(error)
-            : console.log(error.response);
-        });
-    } else setInitialValues({});
-  }, [query.item]);
+      }
+    };
+
+    loadInitialData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [form, query.item]);
 
   const addItem = () => {
     let data;
-    let main = new FormData();
-    try {
-      // main.append("zip_file", zip_file, zip_file.name);
-      main.append("icon_img", icon, icon.name);
-      main.append("preview_img", preview, preview.name);
+    const main = new FormData();
+    const hasIcon = Boolean(icon && icon.originFileObj);
+    const hasPreview = Boolean(preview && preview.originFileObj);
+    const hasNewDemoVideo = Boolean(demoVideo && demoVideo.originFileObj);
 
-      if (demoVideo) {
-        const videoFile = getUploadFile(demoVideo);
-        main.append("demo_video", videoFile, demoVideo.name);
-      }
-
-      if (fileList.length > 0) {
-        for (let index = 0; index < fileList.length; index++) {
-          main.append(
-            `screen${index + 1}`,
-            fileList[index].originFileObj,
-            fileList[index].name
-          );
-        }
-      }
-    } catch {
+    if (!isEditMode && (!hasIcon || !hasPreview)) {
       message.error("please upload all requier data", 5);
-      main = new FormData();
-      setCurrent(0);
+      setCurrent(1);
       return;
     }
+
+    // main.append("zip_file", zip_file, zip_file.name);
+    if (hasIcon) {
+      main.append("icon_img", icon.originFileObj, icon.name);
+    }
+
+    if (hasPreview) {
+      main.append("preview_img", preview.originFileObj, preview.name);
+    }
+
+    if (hasNewDemoVideo) {
+      const videoFile = getUploadFile(demoVideo);
+      main.append("demo_video", videoFile, demoVideo.name);
+    }
+
+    if (fileList.length > 0) {
+      for (let index = 0; index < fileList.length; index++) {
+        main.append(
+          `screen${index + 1}`,
+          fileList[index].originFileObj,
+          fileList[index].name
+        );
+      }
+    }
+
     const nf = [];
     Object.keys(frameworks).forEach((key) => {
       frameworks[key].forEach((f) => nf.push(f));
@@ -205,9 +289,9 @@ const UploadItem = () => {
       test_ios: productDetails.test_ios,
       youtube_url: productDetails.youtube_url,
       // size: Math.ceil(zip_file.size / 1024 / 1024),
-      size: itemSize.current.value,
-      price: itemPrice.current.value,
-      file_url: fileUrl.current.props.value,
+      size: form.getFieldValue("size"),
+      price: form.getFieldValue("price"),
+      file_url: form.getFieldValue("file_url"),
       file_types,
       frameworks: nf,
     };
@@ -233,7 +317,7 @@ const UploadItem = () => {
         .catch((error) => {
           error.response.status === 401 || !error.response.status
             ? handleUnauthorized(error)
-            : (main = new FormData());
+            : console.log(error.response);
           message.error("please fill in all requierd fields", 5);
           setCurrent(0);
         });
@@ -259,7 +343,6 @@ const UploadItem = () => {
           error.response.status === 401 || !error.response.status
             ? handleUnauthorized(error)
             : console.log(error.response);
-          main = new FormData();
           message.error("please fill in all requierd fields", 5);
           setCurrent(0);
         });
@@ -296,8 +379,8 @@ const UploadItem = () => {
             setProductDetails({
               name: values.name,
               short_describtion: values.short_desc,
-              catigory,
-              subcatigory,
+              catigory: values.catigory,
+              subcatigory: values.subcatigory,
               describtion: values.desc,
               features: values.features,
               demo_url: values.demo_url,
@@ -358,8 +441,6 @@ const UploadItem = () => {
 
   //////// Select Options //////////
   const catigoryChange = (value) => {
-    setCatigory(value);
-    setSubcatigory("");
     setFrameworks({});
     setFile_types([]);
     setSubOptions([]);
@@ -383,9 +464,6 @@ const UploadItem = () => {
           ? handleUnauthorized(error)
           : console.log(error.response);
       });
-  };
-  const subCatigoryChange = (value) => {
-    setSubcatigory(value);
   };
   //////// Select Options //////////
 
@@ -456,7 +534,6 @@ const UploadItem = () => {
               disabled={subsOptions.length ? false : true}
               placeholder="subcatigory..."
               style={{ width: "100%" }}
-              onChange={subCatigoryChange}
             >
               {subsOptions.map((s) => {
                 return (
