@@ -50,7 +50,7 @@ class ItemAdmin(admin.ModelAdmin):
             'catigory', 'sub_catigory', 'file_types', 'frameworks']}],
         ['Size & Price', {'fields': ['size', 'price', 'discount_price']}],
         ['dates', {'fields': ['relased_date', 'last_update']}],
-        ['Assets', {'fields': ['icon_img', 'preview_img', 'file_url']}]
+        ['Assets', {'fields': ['icon_img', 'preview_img', 'demo_video', 'file_url']}]
     )
 
 

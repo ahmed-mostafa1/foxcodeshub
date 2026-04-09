@@ -1,8 +1,18 @@
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.utils import timezone
 
 # Create your models here.
+
+MAX_DEMO_VIDEO_SIZE = 8 * 1024 * 1024
+DEMO_VIDEO_EXTENSIONS = ['mp4', 'webm', 'ogg', 'mov']
+
+
+def validate_demo_video_size(file):
+    if file.size > MAX_DEMO_VIDEO_SIZE:
+        raise ValidationError('Demo video file size must be 8 MB or less.')
 
 
 class Catigory(models.Model):
@@ -78,6 +88,15 @@ class Item(models.Model):
     test_apk = models.URLField(blank=True, null=True)
     test_ios = models.URLField(blank=True, null=True)
     youtube_url = models.URLField(blank=True, null=True)
+    demo_video = models.FileField(
+        upload_to='items/demo_videos',
+        null=True,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=DEMO_VIDEO_EXTENSIONS),
+            validate_demo_video_size,
+        ],
+    )
 
     def __str__(self):
         return self.name

@@ -82,7 +82,7 @@ def update_item(request, pk):
                 item.frameworks.add(*frameworks)
                 item.file_types.add(*file_types)
             item.save()
-            for i in range(1, 7):
+            for i in range(1, 9):
                 try:
                     screen = ScreenShots()
                     screen.image = request.data[f'screen{i}']

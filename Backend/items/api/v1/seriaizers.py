@@ -150,8 +150,16 @@ class ItemSerializer(serializers.ModelSerializer):
             'test_apk',
             'test_ios',
             'youtube_url',
+            'demo_video',
         ]
         # depth = 1
+
+    def validate_demo_video(self, value):
+        if value and value.size > MAX_DEMO_VIDEO_SIZE:
+            raise serializers.ValidationError(
+                'Demo video file size must be 8 MB or less.'
+            )
+        return value
 
     def get_frameworks(self, obj):
         return FrameworkSerializer(

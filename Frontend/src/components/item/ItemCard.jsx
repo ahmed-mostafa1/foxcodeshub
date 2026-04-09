@@ -1,35 +1,41 @@
 import * as React from "react";
-import { Card, Tag, Image } from "antd";
+import { Button, Card, Tag, Image } from "antd";
 import { Link } from "react-router-dom";
 import { UserContext } from "../../App";
 const { Meta } = Card;
 
 const ItemCard = ({ item }) => {
   const { host } = React.useContext(UserContext);
+  const itemPath = `/item?id=${item.id}`;
+
   return (
     <div style={{ position: "relative" }}>
-      <Link to={`/item?id=${item.id}`}>
-        {host && (
-          <Card
-            hoverable
-            cover={
+      {host && (
+        <Card
+          hoverable
+          cover={
+            <Link to={itemPath}>
               <img
                 style={{ height: "150px" }}
                 alt="example"
                 src={`${host}${item.preview_img}`}
               />
-            }
-          >
-            <Meta
-              title={item.name}
-              description={
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    flexWrap: "wrap",
-                  }}
-                >
+            </Link>
+          }
+        >
+          <Meta
+            title={<Link to={itemPath}>{item.name}</Link>}
+            description={
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
                   {item.discount_price ? (
                     <>
                       <Tag style={{ height: "fit-content" }} color="success">
@@ -45,11 +51,16 @@ const ItemCard = ({ item }) => {
                     </Tag>
                   )}
                 </div>
-              }
-            />
-          </Card>
-        )}
-      </Link>
+                <Link to={itemPath}>
+                  <Button size="small" type="primary">
+                    Buy Now
+                  </Button>
+                </Link>
+              </div>
+            }
+          />
+        </Card>
+      )}
       <div style={{ position: "absolute", top: "3%", right: "3%" }}>
         <Image preview={false} src={require("../../images/item_card.ico")} />
       </div>

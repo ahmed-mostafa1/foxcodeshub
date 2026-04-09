@@ -7,11 +7,16 @@ import AdBanner from "../common/AdBanner";
 
 const ItemDetails = (props) => {
   const { host, authedUser, setAuthedUser } = React.useContext(UserContext);
-  const { item, setItem } = React.useContext(ItemContext);
+  const { item } = React.useContext(ItemContext);
   const [likeState, setLikeState] = React.useState();
   const [wishlistState, setWishlistState] = React.useState();
   const [ownerState, setOwnerState] = React.useState(false);
   const carouselRef = React.useRef();
+
+  const getMediaUrl = (path) => {
+    if (!path) return "";
+    return path.startsWith("http") ? path : `${host}${path}`;
+  };
 
   React.useEffect(() => {
     const checkLike =
@@ -63,8 +68,11 @@ const ItemDetails = (props) => {
       });
   };
 
-  // Build gallery slides: YouTube first (if exists), then screenshot images
+  // Build gallery slides: uploaded demo video first, then YouTube and screenshots.
   const gallerySlides = [];
+  if (item.demo_video) {
+    gallerySlides.push({ type: "video", src: getMediaUrl(item.demo_video) });
+  }
   if (item.youtube_url) {
     const videoId = item.youtube_url.includes("watch?v=")
       ? new URL(item.youtube_url).searchParams.get("v")
@@ -72,7 +80,9 @@ const ItemDetails = (props) => {
     gallerySlides.push({ type: "youtube", videoId });
   }
   item.screens && item.screens.forEach((s) => {
-    gallerySlides.push({ type: "image", src: `${host}${s.image}` });
+    if (s.image) {
+      gallerySlides.push({ type: "image", src: getMediaUrl(s.image) });
+    }
   });
 
   return (
@@ -100,6 +110,15 @@ const ItemDetails = (props) => {
                       }}
                     />
                   </div>
+                ) : slide.type === "video" ? (
+                  <video
+                    src={slide.src}
+                    controls
+                    autoPlay
+                    muted
+                    playsInline
+                    style={{ width: "100%", maxHeight: "57vh", objectFit: "cover" }}
+                  />
                 ) : (
                   <Image
                     src={slide.src}

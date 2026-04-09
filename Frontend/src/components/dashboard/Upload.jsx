@@ -22,6 +22,8 @@ const { Step } = Steps;
 const { Dragger } = Upload;
 const { Option } = Select;
 const { Title } = Typography;
+const MAX_DEMO_VIDEO_SIZE = 8 * 1024 * 1024;
+const DEMO_VIDEO_EXTENSIONS = /\.(mp4|webm|ogg|mov)$/i;
 
 const UploadItem = () => {
   const [form] = Form.useForm();
@@ -37,6 +39,7 @@ const UploadItem = () => {
   const [fileList, SetFilelist] = React.useState([]);
   const [icon, setIcon] = React.useState("");
   const [preview, setPreview] = React.useState("");
+  const [demoVideo, setDemoVideo] = React.useState("");
   const [productDetails, setProductDetails] = React.useState({});
   const [catigory, setCatigory] = React.useState("");
   const [subcatigory, setSubcatigory] = React.useState("");
@@ -56,6 +59,64 @@ const UploadItem = () => {
   const fileUrl = React.useRef();
   const location = useLocation();
   const query = QueryString.parse(location.search);
+
+  const getUploadFile = (file) => file.originFileObj || file;
+
+  const validateDemoVideo = (file) => {
+    const isVideo =
+      (file.type && file.type.startsWith("video/")) ||
+      DEMO_VIDEO_EXTENSIONS.test(file.name || "");
+    const isLt8M = file.size <= MAX_DEMO_VIDEO_SIZE;
+
+    if (!isVideo) {
+      message.error("Demo video must be a video file", 5);
+      return false;
+    }
+
+    if (!isLt8M) {
+      message.error("Demo video must be 8 MB or less", 5);
+      return false;
+    }
+
+    return true;
+  };
+
+  const beforeDemoVideoUpload = (file) => {
+    return validateDemoVideo(file) ? false : Upload.LIST_IGNORE || false;
+  };
+
+  const handleDemoVideoChange = (info) => {
+    const nextFile = info.fileList.slice(-1)[0];
+
+    if (!nextFile) {
+      setDemoVideo("");
+      return;
+    }
+
+    if (!validateDemoVideo(getUploadFile(nextFile))) {
+      setDemoVideo("");
+      return;
+    }
+
+    setDemoVideo(nextFile);
+  };
+
+  const showUploadError = (error) => {
+    if (!error.response || error.response.status === 401) {
+      handleUnauthorized(error);
+      return;
+    }
+
+    const data = error.response.data || {};
+    const demoVideoError = Array.isArray(data.demo_video)
+      ? data.demo_video[0]
+      : data.demo_video;
+
+    message.error(
+      demoVideoError || data.error || "Could not upload item media",
+      5
+    );
+  };
 
   React.useEffect(() => {
     axiosFetchInstance
@@ -105,6 +166,11 @@ const UploadItem = () => {
       // main.append("zip_file", zip_file, zip_file.name);
       main.append("icon_img", icon, icon.name);
       main.append("preview_img", preview, preview.name);
+
+      if (demoVideo) {
+        const videoFile = getUploadFile(demoVideo);
+        main.append("demo_video", videoFile, demoVideo.name);
+      }
 
       if (fileList.length > 0) {
         for (let index = 0; index < fileList.length; index++) {
@@ -161,7 +227,7 @@ const UploadItem = () => {
               );
             })
             .catch((error) => {
-              handleUnauthorized(error);
+              showUploadError(error);
             });
         })
         .catch((error) => {
@@ -186,7 +252,7 @@ const UploadItem = () => {
               );
             })
             .catch((error) => {
-              handleUnauthorized(error);
+              showUploadError(error);
             });
         })
         .catch((error) => {
@@ -489,7 +555,7 @@ const UploadItem = () => {
       ),
     },
     {
-      title: "Image Assest",
+      title: "Media Assets",
       content: (
         <>
           <div
@@ -530,6 +596,26 @@ const UploadItem = () => {
                 </p>
               </Dragger>
             </div>
+          </div>
+          <div style={{ padding: "0 1rem 1rem" }}>
+            <Dragger
+              accept="video/mp4,video/webm,video/ogg,video/quicktime"
+              beforeUpload={beforeDemoVideoUpload}
+              fileList={demoVideo ? [demoVideo] : []}
+              maxCount={1}
+              onChange={handleDemoVideoChange}
+              onRemove={() => setDemoVideo("")}
+            >
+              <p className="ant-upload-drag-icon">
+                <InboxOutlined />
+              </p>
+              <p className="ant-upload-text">
+                Click or drag file to upload demo video
+              </p>
+              <p className="ant-upload-hint">
+                Demo Video: optional, max size 8 MB
+              </p>
+            </Dragger>
           </div>
           {!query.item && (
             <div style={{ padding: "1rem" }}>
