@@ -19,7 +19,6 @@ User = get_user_model()
 
 @api_view(['POST'])
 def create_item(request):
-    print(request.data)
 
     main_data = request.data.copy()
     main_data['seller'] = request.user.id
@@ -62,7 +61,6 @@ def update_item(request, pk):
             frameworks = None
             file_types = None
 
-        print(request.data)
 
         ser_item = ItemSerializer(
             instance=item,
@@ -123,7 +121,6 @@ def item_details(request, pk):
 @permission_classes([IsAuthenticatedOrReadOnly])
 def get_items(request, **kwargs):
     if kwargs:
-        print(kwargs['filter'])
         filter = kwargs['filter'].split('=')
         if filter[0] == 'catigory':
             items = Item.objects.filter(catigory__id=filter[1])
@@ -146,7 +143,6 @@ def get_items(request, **kwargs):
 @permission_classes([IsAuthenticatedOrReadOnly])
 def home(request):
     items = Item.objects.all()
-    print(items.annotate(dcount=Count('downloads')).order_by('-dcount'))
     new_items = ItemSerializer(
         instance=items.order_by('-relased_date')[0:12],
         many=True

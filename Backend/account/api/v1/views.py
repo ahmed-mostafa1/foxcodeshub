@@ -22,7 +22,6 @@ from django.conf import settings
 @api_view(['POST'])
 @permission_classes([])
 def sign_up(request):
-    print(request.data)
     ser_user = UserSerializer(data=request.data)
     if ser_user.is_valid():
         user = ser_user.save()
@@ -84,7 +83,6 @@ def user_details(request, **kwargs):
         else:
             if not request.user.is_authenticated:
                 return Response(data={'user': 'AnonymousUser'}, status=status.HTTP_401_UNAUTHORIZED)
-            print(request.user)
             ser_user = UserDataSerializer(instance=request.user)
         return Response(data=ser_user.data, status=status.HTTP_200_OK)
     except Exception as e:
@@ -96,7 +94,6 @@ def user_details(request, **kwargs):
 def resetPasswordRequest(request):
     email = request.data['email']
     if UserProfile.objects.filter(email=email).exists():
-        print('good')
         user = UserProfile.objects.get(email=email)
         uid64 = urlsafe_base64_encode(smart_bytes(user.id))
         token = PasswordResetTokenGenerator().make_token(user)
@@ -133,7 +130,7 @@ def resetPasswordCheck(request, uid64, token):
     try:
         id = smart_str(urlsafe_base64_decode(uid64))
         user = UserProfile.objects.get(id=id)
-        print(user)
+        user = UserProfile.objects.get(id=id)
 
         if not PasswordResetTokenGenerator().check_token(user, token):
             return redirect(f"{redirect_url}?token_valid=false")

@@ -32,7 +32,12 @@ class UserProfileAdmin(admin.ModelAdmin):
         return format_html_join(', ', '<a href="{}{}/change/">{}</a>', ((reverse("admin:items_item_changelist"), i.id, i.name) for i in obj.items.all()))
 
     def downloads(self, obj):
-        return format_html_join(', ', '<a href="{}{}/change/">{}</a>', ((reverse("admin:items_item_changelist"), i.item.id, i.item.name) for i in obj.payments.all()))
+        return format_html_join(', ', '<a href="{}{}/change/">{}</a>', ((reverse("admin:items_item_changelist"), i.item.id, i.item.name) for i in obj.payments.all() if i.item_id and getattr(i, 'item', None)))
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related(
+            'frameworks', 'operation_systems', 'items', 'payments__item', 'withdraws', 'earnings'
+        )
 
     def Withdraws(self, obj):
         return sum([w.amount for w in obj.withdraws.all()])

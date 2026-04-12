@@ -99,4 +99,3 @@ def signupToken(sender, instance, created, **kwargs):
             access_token=access_token
         )
     except Exception as e:
-        print(e)

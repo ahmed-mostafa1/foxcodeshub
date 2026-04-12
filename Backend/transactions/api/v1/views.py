@@ -162,7 +162,6 @@ def create_payout(request):
         # Call API with your client and get a response for your call
         response = client.execute(request_1)
         # If call returns body in response, you can get the deserialized version from the result attribute of the response
-        print(response.result.batch_header)
         withdraw = Withdraw()
         withdraw.user = request.user
         withdraw.trans_id = response.result.batch_header.payout_batch_id
@@ -192,5 +191,4 @@ def create_payout(request):
 
     except IOError as ioe:
         # Handle cient side connection failures
-        print(ioe.message)
         return Response(data={'error': ioe.message}, status=status.HTTP_400_BAD_REQUEST)

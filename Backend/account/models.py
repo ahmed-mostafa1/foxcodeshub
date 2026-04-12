@@ -25,7 +25,6 @@ class Framework(models.Model):
 
 def get_default_frameworks():
     frameworks = Framework.objects.filter(Q(id=1) | Q(id=2))
-    print(frameworks)
     return frameworks
 
 
