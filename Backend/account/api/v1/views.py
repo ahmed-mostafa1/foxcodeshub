@@ -45,7 +45,7 @@ def sign_up(request):
         Util.send_email({
             'email_subject': f"Welcome to Fox Source code",
             'email_body': f"Hello {user.fullname} \n welcome to our site we hope you get the best experience with us \n enjoy our market place as a buyer or upload your code and become seller with us and start gaining money \n  please fill free to contact us if you faced any problem at: \n {settings.SUPPORT_EMAIL}",
-            'to_email': user.email
+            'to_email': [user.email]
         })
         return Response(data=tokens, status=status.HTTP_201_CREATED)
     return Response(data=ser_user.errors, status=status.HTTP_400_BAD_REQUEST)
