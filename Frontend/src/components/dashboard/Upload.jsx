@@ -242,7 +242,10 @@ const UploadItem = () => {
     const hasNewDemoVideo = Boolean(demoVideo && demoVideo.originFileObj);
 
     if (!isEditMode && (!hasIcon || !hasPreview)) {
-      message.error("please upload all requier data", 5);
+      message.error(
+        `please upload the ${!hasIcon ? "icon" : "preview"} image`,
+        5
+      );
       setCurrent(1);
       return;
     }
@@ -394,6 +397,17 @@ const UploadItem = () => {
             message.error("please fill all fields", 5);
           });
         return;
+      }
+      if (current === 1 && !isEditMode) {
+        const hasIcon = Boolean(icon && icon.originFileObj);
+        const hasPreview = Boolean(preview && preview.originFileObj);
+        if (!hasIcon || !hasPreview) {
+          message.error(
+            `please upload the ${!hasIcon ? "icon" : "preview"} image`,
+            5
+          );
+          return;
+        }
       }
       setCurrent(current + 1);
       console.log(frameworks);
@@ -646,7 +660,11 @@ const UploadItem = () => {
             <div className="dragger">
               <Dragger
                 beforeUpload={() => false}
-                onChange={(info) => setIcon(info.file)}
+                listType="picture"
+                fileList={icon ? [icon] : []}
+                maxCount={1}
+                onChange={(info) => setIcon(info.fileList.slice(-1)[0] || "")}
+                onRemove={() => setIcon("")}
               >
                 <p className="ant-upload-drag-icon">
                   <InboxOutlined />
@@ -660,7 +678,11 @@ const UploadItem = () => {
             <div className="dragger">
               <Dragger
                 beforeUpload={() => false}
-                onChange={(info) => setPreview(info.file)}
+                listType="picture"
+                fileList={preview ? [preview] : []}
+                maxCount={1}
+                onChange={(info) => setPreview(info.fileList.slice(-1)[0] || "")}
+                onRemove={() => setPreview("")}
               >
                 <p className="ant-upload-drag-icon">
                   <InboxOutlined />
